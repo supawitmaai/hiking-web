@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — ระบบเดินป่า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Sarabun:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#09140e;--surf:#111d16;--surf2:#182619;--border:#1f3828;
+  --green:#52b870;--gold:#e8a838;--red:#e05050;--blue:#4a9fd4;--purple:#9b72d4;
+  --text:#d8ead0;--muted:#4e6655;--ink:#09140e;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 55% 55% at 50% 40%,rgba(82,184,112,.09),transparent 70%),var(--bg)}
+.lbox{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:2.5rem 2rem;width:min(360px,92vw);text-align:center}
+.lbox h1{font-family:'Kanit',sans-serif;font-size:1.5rem;margin-bottom:.25rem}
+.lbox p{color:var(--muted);font-size:.86rem;margin-bottom:2rem}
+.lbox input{width:100%;padding:.8rem 1rem;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:.95rem;outline:none;margin-bottom:.85rem;transition:border-color .2s}
+.lbox input:focus{border-color:var(--green)}
+.lbtn{width:100%;padding:.88rem;background:var(--green);color:#fff;font-family:'Kanit',sans-serif;font-weight:700;font-size:1rem;border:none;border-radius:6px;cursor:pointer;transition:opacity .2s}
+.lbtn:hover{opacity:.88}
+.lerr{color:var(--red);font-size:.83rem;margin-top:.65rem;display:none}
+
+/* SHELL */
+#appShell{display:none}
+header{background:var(--surf);border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.7rem;position:sticky;top:0;z-index:50}
+.hdr-l h2{font-family:'Kanit',sans-serif;font-size:1.05rem}
+.rbadge{display:inline-block;padding:.2rem .65rem;border-radius:99px;font-size:.7rem;font-family:'Kanit',sans-serif;font-weight:600;margin-left:.5rem}
+.rb-host{background:rgba(232,168,56,.14);color:var(--gold);border:1px solid rgba(232,168,56,.3)}
+.rb-subhost{background:rgba(74,159,212,.14);color:var(--blue);border:1px solid rgba(74,159,212,.3)}
+.rb-admin1{background:rgba(82,184,112,.14);color:var(--green);border:1px solid rgba(82,184,112,.3)}
+.hdr-r{display:flex;align-items:center;gap:.7rem}
+.uname{font-size:.83rem;color:var(--muted)}
+.logout{padding:.36rem .85rem;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.78rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.logout:hover{border-color:var(--red);color:var(--red)}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surf);overflow-x:auto}
+.tab{padding:.82rem 1.35rem;border:none;background:transparent;color:var(--muted);font-family:'Kanit',sans-serif;font-size:.86rem;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.tab:hover:not(.on){color:var(--text)}
+.tpane{display:none;padding:1.4rem}
+.tpane.on{display:block}
+
+/* SHARED */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.7rem}
+.sec-hd h3{font-family:'Kanit',sans-serif;font-size:1.05rem}
+.btn{padding:.48rem 1.05rem;border-radius:5px;font-family:'Kanit',sans-serif;font-weight:600;font-size:.83rem;cursor:pointer;transition:all .2s;border:none}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{opacity:.85}
+.btn-r{background:transparent;border:1px solid var(--red);color:var(--red)}.btn-r:hover{background:var(--red);color:#fff}
+.btn-b{background:transparent;border:1px solid var(--blue);color:var(--blue)}.btn-b:hover{background:var(--blue);color:#fff}
+.btn-au{background:transparent;border:1px solid var(--gold);color:var(--gold)}.btn-au:hover{background:var(--gold);color:#000}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-o:hover{border-color:var(--green);color:var(--green)}
+.btn-sm{padding:.28rem .7rem;font-size:.77rem}
+.btn-xs{padding:.2rem .55rem;font-size:.72rem}
+.btns{display:flex;gap:.35rem;flex-wrap:wrap}
+.empty{text-align:center;padding:3rem;color:var(--muted);font-size:.9rem}
+.spin{width:20px;height:20px;border:3px solid rgba(82,184,112,.2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.spin-lg{width:36px;height:36px;border-width:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TRIP GRID */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem}
+.tcard{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:1.15rem}
+.tcard.active{border-color:rgba(82,184,112,.35)}
+.tc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.tc-name{font-family:'Kanit',sans-serif;font-size:.98rem;font-weight:600}
+.sdot{width:8px;height:8px;border-radius:50%;margin-top:.35rem;flex-shrink:0}
+.sd-active{background:var(--green)}.sd-upcoming{background:var(--gold)}.sd-closed{background:#666}.sd-finalized{background:var(--blue)}
+.tc-meta{font-size:.8rem;color:var(--muted);line-height:1.85;margin-bottom:.9rem}
+.tc-slot{font-size:.8rem;margin-bottom:.9rem;color:var(--text)}
+.tc-slot span{color:var(--green);font-family:'Kanit',sans-serif;font-weight:600}
+
+/* APPLICANTS */
+.filter-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.filt{padding:.35rem .85rem;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Kanit',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s}
+.filt.on{background:var(--green);border-color:var(--green);color:#fff}
+.sbox{padding:.35rem .85rem;background:var(--surf2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:.85rem;outline:none;width:190px}
+.sbox:focus{border-color:var(--green)}
+.tsel{padding:.35rem .85rem;background:var(--surf2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:.85rem;outline:none;max-width:250px}
+
+.stats{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.chip{padding:.3rem .85rem;border-radius:99px;font-family:'Kanit',sans-serif;font-size:.75rem;font-weight:600}
+.ch-t{background:rgba(82,184,112,.1);color:var(--green);border:1px solid rgba(82,184,112,.22)}
+.ch-w{background:rgba(232,168,56,.1);color:var(--gold);border:1px solid rgba(232,168,56,.22)}
+.ch-ok{background:rgba(74,159,212,.1);color:var(--blue);border:1px solid rgba(74,159,212,.22)}
+.ch-no{background:rgba(224,80,80,.1);color:var(--red);border:1px solid rgba(224,80,80,.22)}
+
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:680px}
+thead{position:sticky;top:56px;z-index:10}
+th{background:var(--surf2);padding:.6rem .9rem;text-align:left;font-family:'Kanit',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.7rem .9rem;border-bottom:1px solid rgba(31,56,40,.55);font-size:.86rem;vertical-align:middle}
+tr:hover td{background:rgba(82,184,112,.035)}
+.rank{font-family:'Kanit',sans-serif;font-size:1rem;font-weight:700;color:var(--gold)}
+.sbadge{display:inline-block;padding:.18rem .6rem;border-radius:99px;font-size:.7rem;font-family:'Kanit',sans-serif;font-weight:600;white-space:nowrap}
+.sb-w{background:rgba(232,168,56,.12);color:var(--gold)}
+.sb-ok{background:rgba(74,159,212,.12);color:var(--blue)}
+.sb-no{background:rgba(224,80,80,.12);color:var(--red)}
+.sb-main{background:rgba(82,184,112,.14);color:var(--green)}
+.sb-rsv{background:rgba(155,114,212,.14);color:var(--purple)}
+
+/* USERS */
+.utbl{width:100%;border-collapse:collapse}
+.utbl th{background:var(--surf2);padding:.58rem .9rem;text-align:left;font-family:'Kanit',sans-serif;font-size:.74rem;color:var(--muted);border-bottom:1px solid var(--border)}
+.utbl td{padding:.68rem .9rem;border-bottom:1px solid rgba(31,56,40,.55);font-size:.86rem}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+.moverlay.open{display:flex}
+.modal{background:var(--surf);border:1px solid var(--border);border-radius:12px;width:min(700px,100%);animation:mup .22s ease}
+@keyframes mup{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.mhdr{padding:1.05rem 1.35rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.mhdr h3{font-family:'Kanit',sans-serif;font-size:1rem}
+.mclose{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1}
+.mbody{padding:1.35rem}
+.mftr{padding:1.05rem 1.35rem;border-top:1px solid var(--border);display:flex;gap:.65rem;justify-content:flex-end;flex-wrap:wrap}
+
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem 1.3rem;margin-bottom:1.1rem}
+@media(max-width:460px){.igrid{grid-template-columns:1fr}}
+.ig .k{font-size:.67rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.16rem}
+.ig .v{font-size:.9rem}
+.dsec h4{font-family:'Kanit',sans-serif;font-size:.86rem;color:var(--muted);margin:1rem 0 .45rem}
+.dimg{border:1px solid var(--border);border-radius:7px;overflow:hidden;max-height:360px;display:flex;align-items:center;justify-content:center;background:#000}
+.dimg img{max-width:100%;max-height:360px;object-fit:contain}
+.dlink{display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .85rem;background:var(--surf2);border:1px solid var(--border);border-radius:5px;color:var(--green);text-decoration:none;font-size:.8rem;margin-top:.38rem}
+
+.mfield{margin-bottom:.95rem}
+.mfield label{display:block;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
+.mfield input,.mfield select,.mfield textarea{width:100%;padding:.72rem 1rem;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:.93rem;outline:none;transition:border-color .2s}
+.mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:var(--green)}
+.mfield textarea{min-height:76px;resize:vertical;line-height:1.55}
+.mrow2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+@media(max-width:460px){.mrow2{grid-template-columns:1fr}}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.4rem;right:1.4rem;padding:.7rem 1.3rem;border-radius:7px;font-family:'Kanit',sans-serif;font-size:.86rem;z-index:600;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px}
+.toast.show{opacity:1}
+.t-ok{background:#18421e;color:#a8f0b8;border:1px solid #2a7a38}
+.t-err{background:#521818;color:#f0a8a8;border:1px solid #8a2828}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lbox">
+    <h1>🏔 Admin Panel</h1>
+    <p>ระบบจัดการทริปเดินป่า</p>
+    <input type="text"     id="lu" placeholder="Username" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="lp" placeholder="Password"  onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="lbtn" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="lerr" id="lerr">Username หรือ Password ไม่ถูกต้อง</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appShell">
+  <header>
+    <div class="hdr-l">
+      <h2>🏔 Admin <span id="rbadge" class="rbadge"></span></h2>
+    </div>
+    <div class="hdr-r">
+      <span class="uname" id="uname"></span>
+      <button class="logout" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabBar">
+    <button class="tab on"  onclick="goTab('trips',this)">📋 ทริป</button>
+    <button class="tab"     onclick="goTab('apps',this)">👥 ผู้สมัคร</button>
+    <button class="tab" id="tabUsers" onclick="goTab('users',this)" style="display:none">⚙ Users</button>
+  </div>
+
+  <!-- TRIPS -->
+  <div class="tpane on" id="pane-trips">
+    <div class="sec-hd">
+      <h3>ทริปทั้งหมด</h3>
+      <div id="addTripBtn"></div>
+    </div>
+    <div class="tgrid" id="tripGrid"><div class="empty"><div class="spin spin-lg" style="margin:0 auto"></div></div></div>
+  </div>
+
+  <!-- APPLICANTS -->
+  <div class="tpane" id="pane-apps">
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+      <label style="font-size:.78rem;color:var(--muted)">ทริป:</label>
+      <select class="tsel" id="tripSel" onchange="loadApps()"><option value="">— เลือกทริป —</option></select>
+      <div id="exportBtn"></div>
+      <div id="finalizeBtn"></div>
+      <div id="closeBtn"></div>
+    </div>
+    <div class="stats">
+      <div class="chip ch-t">ทั้งหมด <span id="st0">0</span></div>
+      <div class="chip ch-w">รอตรวจ <span id="st1">0</span></div>
+      <div class="chip ch-ok">อนุมัติ <span id="st2">0</span></div>
+      <div class="chip ch-no">ไม่ผ่าน <span id="st3">0</span></div>
+    </div>
+    <div class="filter-row">
+      <button class="filt on" onclick="setFilt('all',this)">ทั้งหมด</button>
+      <button class="filt"    onclick="setFilt('รอตรวจ',this)">รอตรวจ</button>
+      <button class="filt"    onclick="setFilt('อนุมัติ',this)">อนุมัติ</button>
+      <button class="filt"    onclick="setFilt('ไม่ผ่าน',this)">ไม่ผ่าน</button>
+      <input type="text" class="sbox" id="sbox" placeholder="🔍 ค้นหา..." oninput="renderApps()">
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>#</th><th>ชื่อ-นามสกุล</th><th>เบอร์</th><th>อีเมล</th>
+          <th>เวลาสมัคร</th><th>สถานะ</th><th>ประเภท</th><th>ดำเนินการ</th>
+        </tr></thead>
+        <tbody id="appBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="tpane" id="pane-users">
+    <div class="sec-hd">
+      <h3>จัดการผู้ใช้งาน</h3>
+      <button class="btn btn-g btn-sm" onclick="openAddUser()">+ เพิ่ม User</button>
+    </div>
+    <table class="utbl">
+      <thead><tr><th>Username</th><th>ชื่อแสดง</th><th>Role</th><th>ดำเนินการ</th></tr></thead>
+      <tbody id="userBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="moverlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhdr"><h3 id="mtitle">—</h3><button class="mclose" onclick="closeModal()">✕</button></div>
+    <div class="mbody" id="mbody"></div>
+    <div class="mftr"  id="mftr"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycbxdZSvW8d2rYOtDg1miODI57_93GC4WSVt4DPU4VcX7i-IUaII-8vaGN1eBjjNQZW0k/exec';
+let S=null; // session
+let trips=[],apps=[],users=[];
+let filt='all',currentTripId=null;
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin(){
+  const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value.trim();
+  if(!u||!p)return;
+  try{
+    const d=await post({action:'login',username:u,password:p});
+    if(d.success){S=d;localStorage.setItem('hs',JSON.stringify(S));boot();}
+    else{document.getElementById('lerr').style.display='block';}
+  }catch{document.getElementById('lerr').style.display='block';}
+}
+function doLogout(){S=null;localStorage.removeItem('hs');location.reload();}
+function boot(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  const rl={host:'Host 👑',subhost:'รอง Host',admin1:'Admin1'};
+  const rc={host:'rb-host',subhost:'rb-subhost',admin1:'rb-admin1'};
+  const rb=document.getElementById('rbadge');
+  rb.textContent=rl[S.role]||S.role; rb.className='rbadge '+(rc[S.role]||'');
+  document.getElementById('uname').textContent=S.displayName||S.username;
+  if(S.role==='host'){
+    document.getElementById('tabUsers').style.display='block';
+    document.getElementById('addTripBtn').innerHTML='<button class="btn btn-g btn-sm" onclick="openTripModal()">+ เพิ่มทริป</button>';
+    loadUsers();
+  }
+  loadTrips();
+}
+window.addEventListener('load',()=>{const s=localStorage.getItem('hs');if(s){try{S=JSON.parse(s);boot();}catch{}}});
+
+// ── API ───────────────────────────────────────────────────────
+async function post(b){if(S?.token&&!b.token)b.token=S.token;const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});return r.json();}
+async function get(p){if(S?.token&&!p.token)p.token=S.token;const r=await fetch(API+'?'+new URLSearchParams(p));return r.json();}
+
+// ── TABS ──────────────────────────────────────────────────────
+function goTab(id,btn){
+  document.querySelectorAll('.tpane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pane-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ── TRIPS TAB ─────────────────────────────────────────────────
+async function loadTrips(){
+  const d=await get({action:'trips'});
+  trips=d.trips||[];
+  renderTrips();
+  // populate trip selector in applicants tab
+  const sel=document.getElementById('tripSel');
+  sel.innerHTML='<option value="">— เลือกทริป —</option>'+trips.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+function renderTrips(){
+  if(!trips.length){document.getElementById('tripGrid').innerHTML='<div class="empty">ยังไม่มีทริป</div>';return;}
+  const sd={active:'sd-active',upcoming:'sd-upcoming',closed:'sd-closed',finalized:'sd-finalized'};
+  const sl={active:'🟢 เปิดรับ',upcoming:'🕐 เร็วๆนี้',closed:'🔒 ปิดแล้ว',finalized:'✅ ประกาศแล้ว'};
+  document.getElementById('tripGrid').innerHTML=trips.map(t=>{
+    const canEdit=S.role==='host'||S.role==='subhost';
+    const canDel=S.role==='host';
+    const canView=true;
+    return `<div class="tcard ${t.status==='active'?'active':''}">
+      <div class="tc-hd">
+        <div class="tc-name">${t.name}</div>
+        <div class="sdot ${sd[t.status]||'sd-closed'}" title="${sl[t.status]||t.status}"></div>
+      </div>
+      <div class="tc-meta">
+        📍 ${t.location}<br>📅 ${t.date}<br>💰 ฿${Number(t.price||0).toLocaleString()} &nbsp;👥 ${t.maxSlots} คน<br>
+        🏷 ${sl[t.status]||t.status}
+        ${t.closeTime?`<br>⏰ ปิด: ${t.closeTime}`:''}
+      </div>
+      <div class="btns">
+        ${canView?`<button class="btn btn-o btn-sm" onclick="goApps('${t.id}')">👥 ผู้สมัคร</button>`:''}
+        ${canEdit?`<button class="btn btn-au btn-sm" onclick="openEditTrip('${t.id}')">✏️ แก้ไข</button>`:''}
+        ${canDel?`<button class="btn btn-r btn-sm" onclick="confirmDeleteTrip('${t.id}','${t.name}')">🗑</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goApps(id){
+  document.getElementById('tripSel').value=id;
+  goTab('apps',document.querySelectorAll('.tab')[1]);
+  loadApps();
+}
+
+// ── ADD/EDIT TRIP MODAL ───────────────────────────────────────
+function openTripModal(id){
+  const t=id?trips.find(x=>x.id===id):null;
+  document.getElementById('mtitle').textContent=t?'แก้ไขทริป':'เพิ่มทริปใหม่';
+  document.getElementById('mbody').innerHTML=`
+    <div class="mfield"><label>ชื่อทริป *</label><input id="tn" value="${t?.name||''}"></div>
+    <div class="mrow2">
+      <div class="mfield"><label>สถานที่ *</label><input id="tl" value="${t?.location||''}"></div>
+      <div class="mfield"><label>วันที่จัดกิจกรรม *</label><input id="td" value="${t?.date||''}"></div>
+    </div>
+    <div class="mrow2">
+      <div class="mfield"><label>ราคา (บาท) *</label><input type="number" id="tp" value="${t?.price||''}"></div>
+      <div class="mfield"><label>จำนวนที่นั่ง *</label><input type="number" id="tms" value="${t?.maxSlots||''}"></div>
+    </div>
+    <div class="mrow2">
+      <div class="mfield"><label>เวลาเปิดรับ (เช่น 2025-08-01T09:00)</label><input id="tot" value="${t?.openTime||''}"></div>
+      <div class="mfield"><label>เวลาปิดรับ *</label><input id="tct" value="${t?.closeTime||''}"></div>
+    </div>
+    <div class="mrow2">
+      <div class="mfield"><label>ธนาคาร</label><input id="tbk" value="${t?.bankName||''}"></div>
+      <div class="mfield"><label>ชื่อบัญชี</label><input id="tbn" value="${t?.bankAccName||''}"></div>
+    </div>
+    <div class="mfield"><label>เลขบัญชี</label><input id="tba" value="${t?.bankAccNum||''}"></div>
+    ${t?`<div class="mfield"><label>สถานะ</label><select id="tst">
+      <option value="upcoming" ${t.status==='upcoming'?'selected':''}>เร็วๆนี้</option>
+      <option value="active"   ${t.status==='active'?'selected':''}>เปิดรับสมัคร</option>
+      <option value="closed"   ${t.status==='closed'?'selected':''}>ปิดรับแล้ว</option>
+    </select></div>`:''}
+    <div class="mfield"><label>รายละเอียด</label><textarea id="tds">${t?.description||''}</textarea></div>`;
+  document.getElementById('mftr').innerHTML=`
+    <button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-g btn-sm" onclick="${t?`saveEditTrip('${id}')`:'saveAddTrip()'}">${t?'บันทึก':'เพิ่มทริป'}</button>`;
+  openModal();
+}
+function openEditTrip(id){openTripModal(id);}
+
+async function saveAddTrip(){
+  const b={action:'addTrip',name:v('tn'),location:v('tl'),date:v('td'),price:v('tp'),maxSlots:v('tms'),openTime:v('tot'),closeTime:v('tct'),bankName:v('tbk'),bankAccName:v('tbn'),bankAccNum:v('tba'),description:v('tds')};
+  if(!b.name||!b.location||!b.date||!b.price||!b.maxSlots){toast('กรอกข้อมูลให้ครบ','err');return;}
+  const d=await post(b);
+  if(d.success){closeModal();toast('เพิ่มทริปแล้ว!');loadTrips();}
+  else toast(d.message||'ผิดพลาด','err');
+}
+async function saveEditTrip(id){
+  const b={action:'updateTrip',id,name:v('tn'),location:v('tl'),date:v('td'),price:v('tp'),maxSlots:v('tms'),openTime:v('tot'),closeTime:v('tct'),bankName:v('tbk'),bankAccName:v('tbn'),bankAccNum:v('tba'),status:v('tst'),description:v('tds')};
+  const d=await post(b);
+  if(d.success){closeModal();toast('บันทึกแล้ว!');loadTrips();}
+  else toast(d.message||'ผิดพลาด','err');
+}
+function confirmDeleteTrip(id,name){
+  document.getElementById('mtitle').textContent='ยืนยันลบทริป';
+  document.getElementById('mbody').innerHTML=`<p>คุณแน่ใจหรือไม่ว่าต้องการลบ "<strong>${name}</strong>"?<br><span style="color:var(--red);font-size:.85rem">ข้อมูลผู้สมัครใน sheet จะถูกลบด้วย</span></p>`;
+  document.getElementById('mftr').innerHTML=`<button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button><button class="btn btn-r btn-sm" onclick="deleteTrip('${id}')">ลบทริป</button>`;
+  openModal();
+}
+async function deleteTrip(id){
+  const d=await post({action:'deleteTrip',id});
+  if(d.success){closeModal();toast('ลบทริปแล้ว');loadTrips();}
+  else toast(d.message||'ผิดพลาด','err');
+}
+
+// ── APPLICANTS TAB ────────────────────────────────────────────
+async function loadApps(){
+  const id=document.getElementById('tripSel').value;
+  if(!id){document.getElementById('appBody').innerHTML='<tr><td colspan="8" class="empty">เลือกทริปก่อน</td></tr>';return;}
+  currentTripId=id;
+  document.getElementById('appBody').innerHTML='<tr><td colspan="8" class="empty"><div class="spin" style="margin:0 auto"></div></td></tr>';
+  const d=await get({action:'applicants',tripId:id});
+  apps=d.applicants||[];
+  updateStats();
+  renderApps();
+  // action buttons by role
+  const trip=trips.find(t=>t.id===id);
+  document.getElementById('exportBtn').innerHTML=(S.role==='host'||S.role==='subhost')?`<button class="btn btn-b btn-sm" onclick="exportCSV()">⬇ Export CSV</button>`:'';
+  document.getElementById('closeBtn').innerHTML=(S.role==='host'||S.role==='subhost')&&trip?.status==='active'?`<button class="btn btn-au btn-sm" onclick="confirmClose()">🔒 ปิดรับสมัคร</button>`:'';
+  document.getElementById('finalizeBtn').innerHTML=(S.role==='host'||S.role==='subhost')&&trip?.status==='closed'?`<button class="btn btn-g btn-sm" onclick="confirmFinalize()">✅ ประกาศผล</button>`:'';
+}
+
+function updateStats(){
+  document.getElementById('st0').textContent=apps.length;
+  document.getElementById('st1').textContent=apps.filter(a=>a.status==='รอตรวจ').length;
+  document.getElementById('st2').textContent=apps.filter(a=>a.status==='อนุมัติ').length;
+  document.getElementById('st3').textContent=apps.filter(a=>a.status==='ไม่ผ่าน').length;
+}
+
+function setFilt(f,btn){filt=f;document.querySelectorAll('.filt').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderApps();}
+
+function renderApps(){
+  const q=document.getElementById('sbox').value.toLowerCase();
+  const rows=apps.filter(a=>{
+    const mf=filt==='all'||a.status===filt;
+    const ms=!q||`${a.firstName}${a.lastName}${a.phone}`.toLowerCase().includes(q);
+    return mf&&ms;
+  });
+  if(!rows.length){document.getElementById('appBody').innerHTML='<tr><td colspan="8" class="empty">ไม่พบข้อมูล</td></tr>';return;}
+  const sbMap={รอตรวจ:'sb-w',อนุมัติ:'sb-ok',ไม่ผ่าน:'sb-no'};
+  const typeMap={หลัก:'sb-main',สำรอง:'sb-rsv'};
+  document.getElementById('appBody').innerHTML=rows.map(a=>{
+    const canApprove=S.role==='host'||S.role==='subhost'||S.role==='admin1';
+    const canDel=S.role==='host'||S.role==='admin1';
+    return `<tr>
+      <td><span class="rank">${a.rank}</span></td>
+      <td>${a.firstName} ${a.lastName}</td>
+      <td>${a.phone}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${a.email}</td>
+      <td style="font-size:.76rem;color:var(--muted);white-space:nowrap">${a.registeredAt||'—'}</td>
+      <td><span class="sbadge ${sbMap[a.status]||''}">${a.status}</span></td>
+      <td>${a.type?`<span class="sbadge ${typeMap[a.type]||''}">${a.type}</span>`:'-'}</td>
+      <td><div class="btns">
+        <button class="btn btn-o btn-xs" onclick="openApp(${a.rowIndex})">👁 ดู</button>
+        ${canApprove&&a.status!=='อนุมัติ'?`<button class="btn btn-b btn-xs" onclick="approve(${a.rowIndex})">✅</button>`:''}
+        ${canApprove&&a.status!=='ไม่ผ่าน'?`<button class="btn btn-r btn-xs" onclick="reject(${a.rowIndex})">❌</button>`:''}
+        ${canDel?`<button class="btn btn-r btn-xs" onclick="deleteApp(${a.rowIndex})">🗑</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function getApp(ri){return apps.find(a=>a.rowIndex===ri);}
+
+function openApp(ri){
+  const a=getApp(ri);if(!a)return;
+  const isImg=u=>/\.(jpg|jpeg|png|webp)/i.test((u||'').split('?')[0]);
+  const docBlock=(lbl,url)=>url?`<div class="dsec"><h4>${lbl}</h4>${isImg(url)?`<div class="dimg"><img src="${url}" loading="lazy"></div>`:''}  <a class="dlink" href="${url}" target="_blank">🔗 เปิดในแท็บใหม่</a></div>`:'';
+  document.getElementById('mtitle').textContent=`#${a.rank} — ${a.firstName} ${a.lastName}`;
+  document.getElementById('mbody').innerHTML=`
+    <div class="igrid">
+      <div class="ig"><div class="k">ชื่อ-นามสกุล</div><div class="v">${a.firstName} ${a.lastName}</div></div>
+      <div class="ig"><div class="k">เพศ / อายุ</div><div class="v">${a.gender} / ${a.age} ปี</div></div>
+      <div class="ig"><div class="k">เบอร์โทร</div><div class="v">${a.phone}</div></div>
+      <div class="ig"><div class="k">อีเมล</div><div class="v">${a.email}</div></div>
+      <div class="ig"><div class="k">ฉุกเฉิน</div><div class="v">${a.emergencyName}</div></div>
+      <div class="ig"><div class="k">เบอร์ฉุกเฉิน</div><div class="v">${a.emergencyPhone}</div></div>
+      <div class="ig" style="grid-column:1/-1"><div class="k">โรคประจำตัว</div><div class="v">${a.health||'ไม่มี'}</div></div>
+    </div>
+    ${docBlock('🪪 บัตรประชาชน',a.idUrl)}
+    ${docBlock('🧾 สลิปโอนเงิน',a.slipUrl)}
+    <div class="mfield" style="margin-top:1rem"><label>หมายเหตุ</label><textarea id="noteVal" rows="2">${a.note||''}</textarea></div>`;
+  const canAct=S.role==='host'||S.role==='subhost'||S.role==='admin1';
+  document.getElementById('mftr').innerHTML=`
+    <button class="btn btn-o btn-sm" onclick="closeModal()">ปิด</button>
+    ${canAct?`<button class="btn btn-o btn-sm" onclick="saveNote(${ri})">💾 บันทึกหมายเหตุ</button>`:''}
+    ${canAct&&a.status!=='อนุมัติ'?`<button class="btn btn-b btn-sm" onclick="approve(${ri});closeModal()">✅ อนุมัติ</button>`:''}
+    ${canAct&&a.status!=='ไม่ผ่าน'?`<button class="btn btn-r btn-sm" onclick="reject(${ri});closeModal()">❌ ไม่ผ่าน</button>`:''}`;
+  openModal();
+}
+
+async function saveNote(ri){
+  const note=document.getElementById('noteVal')?.value||'';
+  const d=await post({action:'updateApplicant',tripId:currentTripId,rowIndex:ri,note});
+  if(d.success){const a=getApp(ri);if(a)a.note=note;toast('บันทึกหมายเหตุแล้ว');}
+  else toast(d.message||'ผิดพลาด','err');
+}
+async function approve(ri){
+  const d=await post({action:'updateApplicant',tripId:currentTripId,rowIndex:ri,status:'อนุมัติ'});
+  if(d.success){const a=getApp(ri);if(a)a.status='อนุมัติ';updateStats();renderApps();toast('อนุมัติแล้ว');}
+  else toast(d.message||'ผิดพลาด','err');
+}
+async function reject(ri){
+  const d=await post({action:'updateApplicant',tripId:currentTripId,rowIndex:ri,status:'ไม่ผ่าน'});
+  if(d.success){const a=getApp(ri);if(a)a.status='ไม่ผ่าน';updateStats();renderApps();toast('บันทึกแล้ว');}
+  else toast(d.message||'ผิดพลาด','err');
+}
+async function deleteApp(ri){
+  if(!confirm('ลบผู้สมัครนี้?'))return;
+  const d=await post({action:'deleteApplicant',tripId:currentTripId,rowIndex:ri});
+  if(d.success){apps=apps.filter(a=>a.rowIndex!==ri);updateStats();renderApps();toast('ลบแล้ว');}
+  else toast(d.message||'ผิดพลาด','err');
+}
+
+function confirmClose(){
+  document.getElementById('mtitle').textContent='ยืนยันปิดรับสมัคร';
+  document.getElementById('mbody').innerHTML='<p>ปิดรับสมัครทริปนี้แล้ว ผู้สมัครใหม่จะเข้าไม่ได้ ยืนยันหรือไม่?</p>';
+  document.getElementById('mftr').innerHTML=`<button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button><button class="btn btn-r btn-sm" onclick="closeTrip()">🔒 ปิดรับสมัคร</button>`;
+  openModal();
+}
+async function closeTrip(){
+  const d=await post({action:'closeTrip',id:currentTripId});
+  if(d.success){closeModal();toast('ปิดรับสมัครแล้ว');loadTrips();loadApps();}
+  else toast(d.message||'ผิดพลาด','err');
+}
+
+function confirmFinalize(){
+  document.getElementById('mtitle').textContent='ประกาศผล';
+  document.getElementById('mbody').innerHTML='<p>ระบบจะแยก <strong>หลัก / สำรอง</strong> จากผู้ที่ "อนุมัติ" แล้ว และ Export CSV ประกาศผล ยืนยันหรือไม่?</p>';
+  document.getElementById('mftr').innerHTML=`<button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button><button class="btn btn-g btn-sm" onclick="finalize()">✅ ประกาศผล</button>`;
+  openModal();
+}
+async function finalize(){
+  const d=await post({action:'finalizeTrip',tripId:currentTripId});
+  if(d.success){closeModal();toast('ประกาศผลแล้ว!');loadApps();exportCSV();}
+  else toast(d.message||'ผิดพลาด','err');
+}
+
+function exportCSV(){
+  const trip=trips.find(t=>t.id===currentTripId);
+  const headers=['ลำดับ','ชื่อ','นามสกุล','เพศ','อายุ','เบอร์','อีเมล','โรคประจำตัว','ผู้ติดต่อฉุกเฉิน','เบอร์ฉุกเฉิน','สถานะ','ประเภท','หมายเหตุ','เวลาสมัคร'];
+  const rows=apps.map(a=>[a.rank,a.firstName,a.lastName,a.gender,a.age,a.phone,a.email,a.health,a.emergencyName,a.emergencyPhone,a.status,a.type||'',a.note||'',a.registeredAt]);
+  const csv=[headers,...rows].map(r=>r.map(c=>`"${c||''}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${trip?.name||'trip'}_ผู้สมัคร.csv`;a.click();
+  toast('Export CSV แล้ว!');
+}
+
+// ── USERS TAB ─────────────────────────────────────────────────
+async function loadUsers(){
+  const d=await get({action:'users'});
+  users=d.users||[];
+  const rl={host:'Host 👑',subhost:'รอง Host',admin1:'Admin1'};
+  document.getElementById('userBody').innerHTML=users.map(u=>`<tr>
+    <td>${u.username}</td><td>${u.displayName}</td><td>${rl[u.role]||u.role}</td>
+    <td><div class="btns">
+      <button class="btn btn-au btn-xs" onclick="openChangePw('${u.username}')">🔑 เปลี่ยนรหัส</button>
+      ${u.role!=='host'?`<button class="btn btn-r btn-xs" onclick="removeUser('${u.username}')">🗑 ลบ</button>`:''}
+    </div></td>
+  </tr>`).join('');
+}
+
+function openAddUser(){
+  document.getElementById('mtitle').textContent='เพิ่ม User';
+  document.getElementById('mbody').innerHTML=`
+    <div class="mrow2">
+      <div class="mfield"><label>Username *</label><input id="nu"></div>
+      <div class="mfield"><label>Password *</label><input id="np" type="password"></div>
+    </div>
+    <div class="mrow2">
+      <div class="mfield"><label>ชื่อแสดง *</label><input id="nd"></div>
+      <div class="mfield"><label>Role *</label><select id="nr"><option value="admin1">Admin1</option><option value="subhost">รอง Host</option></select></div>
+    </div>`;
+  document.getElementById('mftr').innerHTML=`<button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button><button class="btn btn-g btn-sm" onclick="saveAddUser()">เพิ่ม</button>`;
+  openModal();
+}
+async function saveAddUser(){
+  const d=await post({action:'manageUsers',op:'add',username:v('nu'),password:v('np'),displayName:v('nd'),role:v('nr')});
+  if(d.success){closeModal();toast('เพิ่ม User แล้ว');loadUsers();}else toast(d.message||'ผิดพลาด','err');
+}
+function openChangePw(username){
+  document.getElementById('mtitle').textContent='เปลี่ยนรหัสผ่าน: '+username;
+  document.getElementById('mbody').innerHTML=`<div class="mfield"><label>รหัสผ่านใหม่ *</label><input id="cpw" type="password"></div>`;
+  document.getElementById('mftr').innerHTML=`<button class="btn btn-o btn-sm" onclick="closeModal()">ยกเลิก</button><button class="btn btn-g btn-sm" onclick="saveChangePw('${username}')">บันทึก</button>`;
+  openModal();
+}
+async function saveChangePw(username){
+  const d=await post({action:'manageUsers',op:'changePassword',username,newPassword:v('cpw')});
+  if(d.success){closeModal();toast('เปลี่ยนรหัสแล้ว');}else toast(d.message||'ผิดพลาด','err');
+}
+async function removeUser(username){
+  if(!confirm(`ลบ user "${username}"?`))return;
+  const d=await post({action:'manageUsers',op:'remove',username});
+  if(d.success){toast('ลบแล้ว');loadUsers();}else toast(d.message||'ผิดพลาด','err');
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast t-${type} show`;
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function v(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+</script>
+</body>
+</html>
