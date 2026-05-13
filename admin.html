@@ -243,7 +243,7 @@ tr:hover td{background:rgba(82,184,112,.035)}
 <div class="toast" id="toast"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbwnSt3PuGzDOOlkCjQSEeGobNFs_s2BCofqGMjR-vptSwIHC30LLOhbZpN44MxrbeTh/exec';
+const API='https://script.google.com/macros/s/AKfycbwURUIIzPx9qCczHyfmH6dXbNgpVTrgdb46w2deeLvLIefKQxTRPKTxdVIE5ODo245x/exec';
 let S=null; // session
 let trips=[],apps=[],users=[];
 let filt='all',currentTripId=null;
@@ -277,21 +277,43 @@ function boot(){
 window.addEventListener('load',()=>{const s=localStorage.getItem('hs');if(s){try{S=JSON.parse(s);boot();}catch{}}});
 
 // ── API ───────────────────────────────────────────────────────
+// ใช้ GET แทน POST ทุก action (ยกเว้น register ที่มีไฟล์)
 async function post(b) {
+  if (!S) {
+    const saved = localStorage.getItem('hs');
+    if (saved) try { S = JSON.parse(saved); } catch {}
+  }
   if (S?.token) b.token = S.token;
+
+  // register ยังใช้ POST เพราะมีไฟล์ base64
+  if (b.action === 'register') {
+    try {
+      const r = await fetch(API, { method: 'POST', body: JSON.stringify(b) });
+      return await r.json();
+    } catch(e) { return { success: false, message: e.message }; }
+  }
+
+  // ทุก action อื่นใช้ GET แทน
+  return get(b);
+}
+
+async function get(p) {
+  if (!S) {
+    const saved = localStorage.getItem('hs');
+    if (saved) try { S = JSON.parse(saved); } catch {}
+  }
+  if (S?.token && !p.token) p.token = S.token;
   try {
-    const r = await fetch(API, {
-      method: 'POST',
-      body: JSON.stringify(b)
-      // ไม่ใส่ headers เลย — browser จะส่งเป็น text/plain อัตโนมัติ
-    });
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(p).filter(([,v]) => v !== undefined && v !== null))
+    ).toString();
+    const r = await fetch(`${API}?${qs}`);
     return await r.json();
   } catch(e) {
-    console.error('POST error:', e);
+    console.error('GET error:', e);
     return { success: false, message: e.message };
   }
 }
-async function get(p){if(S?.token&&!p.token)p.token=S.token;const r=await fetch(API+'?'+new URLSearchParams(p));return r.json();}
 
 // ── TABS ──────────────────────────────────────────────────────
 function goTab(id,btn){
