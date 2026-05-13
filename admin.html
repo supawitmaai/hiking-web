@@ -243,7 +243,7 @@ tr:hover td{background:rgba(82,184,112,.035)}
 <div class="toast" id="toast"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbwWx084Y4iFD2zXBhRx09UQhtonfqcZwfF4SAsr_M3vjWcqEN_j5qJ4AWz8jfEl_VqF/exec';
+const API='https://script.google.com/macros/s/AKfycbwnSt3PuGzDOOlkCjQSEeGobNFs_s2BCofqGMjR-vptSwIHC30LLOhbZpN44MxrbeTh/exec';
 let S=null; // session
 let trips=[],apps=[],users=[];
 let filt='all',currentTripId=null;
@@ -282,8 +282,8 @@ async function post(b) {
   try {
     const r = await fetch(API, {
       method: 'POST',
-      body: JSON.stringify(b),
-      headers: { 'Content-Type': 'text/plain' } // ← ใช้ text/plain แทน json เพื่อหลีก CORS preflight
+      body: JSON.stringify(b)
+      // ไม่ใส่ headers เลย — browser จะส่งเป็น text/plain อัตโนมัติ
     });
     return await r.json();
   } catch(e) {
