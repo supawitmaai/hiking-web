@@ -243,7 +243,7 @@ tr:hover td{background:rgba(82,184,112,.035)}
 <div class="toast" id="toast"></div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbxdZSvW8d2rYOtDg1miODI57_93GC4WSVt4DPU4VcX7i-IUaII-8vaGN1eBjjNQZW0k/exec';
+const API='https://script.google.com/macros/s/AKfycbwWx084Y4iFD2zXBhRx09UQhtonfqcZwfF4SAsr_M3vjWcqEN_j5qJ4AWz8jfEl_VqF/exec';
 let S=null; // session
 let trips=[],apps=[],users=[];
 let filt='all',currentTripId=null;
@@ -277,7 +277,20 @@ function boot(){
 window.addEventListener('load',()=>{const s=localStorage.getItem('hs');if(s){try{S=JSON.parse(s);boot();}catch{}}});
 
 // ── API ───────────────────────────────────────────────────────
-async function post(b){if(S?.token&&!b.token)b.token=S.token;const r=await fetch(API,{method:'POST',body:JSON.stringify(b)});return r.json();}
+async function post(b) {
+  if (S?.token) b.token = S.token;
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify(b),
+      headers: { 'Content-Type': 'text/plain' } // ← ใช้ text/plain แทน json เพื่อหลีก CORS preflight
+    });
+    return await r.json();
+  } catch(e) {
+    console.error('POST error:', e);
+    return { success: false, message: e.message };
+  }
+}
 async function get(p){if(S?.token&&!p.token)p.token=S.token;const r=await fetch(API+'?'+new URLSearchParams(p));return r.json();}
 
 // ── TABS ──────────────────────────────────────────────────────
